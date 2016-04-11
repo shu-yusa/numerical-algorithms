@@ -1,0 +1,17 @@
+ set term postscript eps enhanced color
+ set output "Box_Muller.eps"
+ set size 0.8, 0.8
+ set title "Box Muller Method"
+ set xrange [-5:5]
+ set yrange [0:0.5]
+ set xlabel "X"
+ set ylabel "Y"
+ set label "Trial : 10000000 times" \
+ at -4.5, 0.425
+ set xtics 1
+ set ytics 0.05
+ set grid
+ f(x) = exp(-0.5*x*x) / sqrt(2*pi)
+ pl "hist.dat"title "x1 -> y1" w boxes, \
+ f(x) title "exp(-0.5*x^2) / sqrt(2{/Symbol p})"
+ set term x11

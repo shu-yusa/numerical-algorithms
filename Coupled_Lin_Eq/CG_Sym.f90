@@ -1,0 +1,137 @@
+!====================================================================!
+!     Title  : CG_Sym.f90                                            !
+!     Author : Yusa Shusaku                                          !
+!     Date   : 2008-4-29-Tue                                         !
+!====================================================================!
+      program  Main
+      implicit none
+      integer :: N, i, j, Step
+      real(8), allocatable :: a(:,:), b(:), x(:)
+
+      open(10, file='Matrix_4x4_Sym', action='read')
+      read(10,*) N
+      allocate( a(N,N), b(N), x(N) )
+      do i=1, N
+          read(10, *) (a(i,j), j=1, N), b(i)
+      end do
+
+      call  Title
+      call  Show_Matrix(N, a, b)
+
+      call  Conj_Grad(N, a, b, x, Step)
+      
+      call  Show_Result(N, a, b, x, Step)
+      call  Show_Error(N, x)
+
+      stop
+      end program
+!====================================================================!
+      subroutine  Conj_Grad(N, a, b, x, Step)
+      implicit none
+      integer, intent(in) :: N
+      integer :: i
+      integer, intent(out) :: Step
+      real(8), intent(in) :: a(N,N), b(N)
+      real(8), intent(out) :: x(N)
+      real(8), dimension(N) :: r, p, q
+      real(8) :: C1, C2, alpha, beta
+
+      call  Guess_x(N, x)
+      r = b - matmul(a, x)
+      p = r
+      C2 = dot_product(x, b + r)
+
+      Step = 0
+      do 
+        Step = Step + 1
+        C1 = C2
+        q = matmul(a, p)
+        alpha = dot_product(p,r) / dot_product(p,q)
+        x = x + alpha * p
+        if (Mod(Step, 3) == 0) then
+            r = b - Matmul(a, x)
+        else
+            r = r - alpha * q
+        end if
+        C2 = Dot_Product(x, b + r)
+        if (C1 >= C2) exit
+        beta = - Dot_Product(r, q) / Dot_Product(p, q)
+        p = r + beta * p
+      end do
+          
+      return
+      end subroutine
+!====================================================================!
+      subroutine  Guess_x(N, x)
+      implicit none
+      integer, intent(in) :: N
+      integer :: i
+      real(8), intent(out) :: x(N)
+
+      do i=1 ,N
+        x(i) = dble(i) * 3.2d0
+      end do
+
+      return
+      end subroutine
+!====================================================================!
+      subroutine  Title
+
+      write(6,*)
+      write(6,*) '***************************************************'
+      write(6,*) ' Conjugate  Gradient  Method (for Symmetic Matrix) '
+      write(6,*) '***************************************************'
+      write(6,*)
+
+      return
+      end subroutine
+!====================================================================!
+      subroutine  Show_Result(N, a, b, x, Step)
+      implicit none
+      integer, intent(in) :: N, Step
+      integer :: i, j
+      real(8), intent(in) :: a(N,N), b(N), x(N)
+      character(len=30) :: FM ='(x,a,i3,a)'
+      character(len=30) :: FM2='(x,a,i1,a,f9.5)'
+
+
+      write(6,FM) 'Iteration :', Step, ' times'
+      write(6,*) 
+      do i=1, N
+          write(6,FM2) 'x(',i,') =', x(i)
+      end do
+      write(6,*) 
+
+      return
+      end subroutine
+!====================================================================!
+      subroutine  Show_Matrix(N, a, b)
+      implicit none
+      integer, intent(in) :: N
+      integer :: i, j
+      real(8), intent(in) :: a(N,N), b(n)
+      character(len=30) :: FM='(x,a,4f7.2,a,i1,a,f7.2,a)'
+      
+      do i=1, N
+          write(6,FM) '|', (a(i,j), j=1, N), &
+                     &' || x(',i,') | = |', b(i), ' |'
+      end do
+      write(6,*) 
+
+      return
+      end subroutine
+!====================================================================!
+      subroutine  Show_Error(N, x)
+      implicit none
+      integer, intent(in) :: N
+      real(8), intent(in) :: x(N)
+      character(len=30) :: FM ='(x,a,1pd12.5)'
+      
+      write(6,FM) 'Err(1) =',abs(x(1) - 1.0d0)
+      write(6,FM) 'Err(2) =',abs(x(2) - 2.0d0)
+      write(6,FM) 'Err(3) =',abs(x(3) + 1.0d0)
+      write(6,FM) 'Err(4) =',abs(x(4) - 1.0d0)
+      write(6,*)
+
+      return
+      end subroutine
